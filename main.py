@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,HTTPException
 from pydantic import BaseModel
 import sqlite3
 
@@ -49,7 +49,7 @@ def get_task(task_id: int):
     row = conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
     conn.close()
     if row is None:
-        return {"error": "Task not found"}
+        raise HTTPException(status_code=404,detail="Task not found")
     return dict(row)
 
 @app.post("/tasks")
@@ -71,7 +71,7 @@ def update_task(task_id: int, update_task: Task):
     conn.commit()
     conn.close()
     if result.rowcount == 0:
-        return {"error": "Task not found"}
+        raise HTTPException (status_code=404,detail="Task not found")
     return update_task
 
 @app.delete("/tasks/{task_id}")
@@ -81,5 +81,5 @@ def delete_task(task_id: int):
     conn.commit()
     conn.close()
     if result.rowcount == 0:
-        return {"error": "Task not found"}
+        raise HTTPException (status_code=404,detail="Task not found")
     return {"message": "Task deleted"}
