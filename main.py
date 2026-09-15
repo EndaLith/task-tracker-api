@@ -47,6 +47,10 @@ def init_db():
         )
         """
     )
+    try:
+        conn.execute("ALTER TABLE tasks ADD COLUMN owner TEXT")
+    except sqlite3.OperationalError:
+        pass    
     conn.commit()
     conn.close()
 init_db()
@@ -72,14 +76,14 @@ def read_root():
 @app.get("/tasks")
 def get_tasks(current_user:str=Depends(get_current_user)):
     conn = get_db_connection()
-    rows = conn.execute("SELECT * FROM tasks").fetchall()
+    rows = conn.execute("SELECT * FROM tasks WHERE owner=?",(current_user,)).fetchall()
     conn.close()
     return [dict(row) for row in rows]
 
 @app.get("/tasks/{task_id}")
 def get_task(task_id:int,current_user:str=Depends(get_current_user)):
     conn = get_db_connection()
-    row = conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
+    row = conn.execute("SELECT * FROM tasks WHERE id=? AND owner=?", (task_id,current_user)).fetchone()
     conn.close()
     if row is None:
         raise HTTPException(status_code=404,detail="Task not found")
@@ -89,7 +93,7 @@ def get_task(task_id:int,current_user:str=Depends(get_current_user)):
 def create_task(task: Task,current_user:str = Depends(get_current_user)):
     conn = get_db_connection()
     conn.execute(
-        "INSERT INTO tasks (id,title,description,completed) VALUES (?,?,?,?)", (task.id, task.title, task.description, task.completed)
+        "INSERT INTO tasks (id,title,description,completed,owner) VALUES (?,?,?,?,?)", (task.id, task.title, task.description, task.completed,current_user)
     )
     conn.commit()
     conn.close()
@@ -99,7 +103,7 @@ def create_task(task: Task,current_user:str = Depends(get_current_user)):
 def update_task(task_id: int, update_task: Task,current_user:str=Depends(get_current_user)):
     conn = get_db_connection()
     result = conn.execute(
-        "UPDATE tasks SET title = ?, description=?, completed=? WHERE id=?", (update_task.title, update_task.description, update_task.completed, task_id)
+        "UPDATE tasks SET title = ?, description=?, completed=? WHERE id=? AND owner=?", (update_task.title, update_task.description, update_task.completed, task_id,current_user)
     )
     conn.commit()
     conn.close()
@@ -110,7 +114,7 @@ def update_task(task_id: int, update_task: Task,current_user:str=Depends(get_cur
 @app.delete("/tasks/{task_id}")
 def delete_task(task_id: int,current_user:str= Depends(get_current_user)):
     conn = get_db_connection()
-    result = conn.execute("DELETE FROM tasks WHERE id=?", (task_id,))
+    result = conn.execute("DELETE FROM tasks WHERE id=? AND owner=?", (task_id,current_user))
     conn.commit()
     conn.close()
     if result.rowcount == 0:
