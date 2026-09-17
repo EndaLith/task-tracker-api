@@ -74,9 +74,12 @@ def read_root():
     return {"message": "Hello, Task Tracker API is running!"}
 
 @app.get("/tasks")
-def get_tasks(current_user:str=Depends(get_current_user)):
+def get_tasks(current_user:str=Depends(get_current_user),completed:bool | None = None):
     conn = get_db_connection()
-    rows = conn.execute("SELECT * FROM tasks WHERE owner=?",(current_user,)).fetchall()
+    if completed is None:
+        rows = conn.execute("SELECT * FROM tasks WHERE owner=?",(current_user,)).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM tasks WHERE owner=? AND completed=?",(current_user,completed)).fetchall()
     conn.close()
     return [dict(row) for row in rows]
 
