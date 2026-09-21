@@ -8,6 +8,7 @@ A simple REST API for managing personal tasks, built with FastAPI and SQLite. Ea
 - JWT-based authentication
 - Full CRUD operations for tasks (create, read, update, delete)
 - Tasks are scoped per user — one user cannot access another user's tasks
+- Tasks can be filtered by completion status
 - SQLite database for persistent storage
 - Interactive API documentation via Swagger UI
 
@@ -54,3 +55,5 @@ A simple REST API for managing personal tasks, built with FastAPI and SQLite. Ea
 | POST   | /tasks            | Create a new task             | Yes            |
 | PUT    | /tasks/{id}       | Update an existing task       | Yes            |
 | DELETE | /tasks/{id}       | Delete a task                 | Yes            |
+
+`GET /tasks` accepts an optional `completed` query parameter (`true` or `false`) to filter tasks by completion status.
